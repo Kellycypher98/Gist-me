@@ -93,6 +93,54 @@ router.get("/:roomId/messages", async (req, res) => {
   }
 });
 
+// Edit message in a room
+router.put("/:roomId/messages/:messageId", async (req, res) => {
+  try {
+    const { roomId, messageId } = req.params;
+    const { newText } = req.body;
+
+    // Validate input
+    if (!newText || !newText.trim()) {
+      return res.status(400).json({ message: "New message text is required" });
+    }
+
+    // Find message and update text
+    const message = await Message.findOneAndUpdate(
+      { _id: messageId, roomId },
+      { text: newText.trim(), edited: true, updatedAt: Date.now() },
+      { new: true }
+    ).populate("sender", "username"); // Populate sender info for updated response
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    res.json({ message: "Message updated successfully", data: message });
+  } catch (error) {
+    console.error("Error updating message:", error);
+    res.status(500).json({ message: "Failed to update message" });
+  }
+});
+
+// Delete message in a room
+router.delete("/:roomId/messages/:messageId", async (req, res) => {
+  try {
+    const { roomId, messageId } = req.params;
+
+    // Find and delete the message
+    const message = await Message.findOneAndDelete({ _id: messageId, roomId });
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    res.json({ message: "Message deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting message:", error);
+    res.status(500).json({ message: "Failed to delete message" });
+  }
+});
+
 // Create a new message in a room
 router.post("/:roomId/messages", async (req, res) => {
   try {

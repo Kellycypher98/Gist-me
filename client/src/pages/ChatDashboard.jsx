@@ -4,6 +4,8 @@ import { io } from 'socket.io-client';
 import RoomManager from '../components/RoomManager';
 import LogoutBtn from '../components/LogoutBtn';
 import { useAuth } from '../context/AuthContext';
+import TypingIndicator from '../components/TypingIndicator';
+
 
 const ChatDashboard = () => {
   const [rooms, setRooms] = useState([]);
@@ -18,6 +20,8 @@ const ChatDashboard = () => {
   const { token, user } = useAuth();
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
+  const typingTimeout = useRef(null);
+
 
   // Initialize socket connection
   useEffect(() => {
@@ -237,6 +241,26 @@ const ChatDashboard = () => {
     return message.sender._id === user._id;
   };
 
+const handleMessageInputChange = (e) => {
+    setMessageInput(e.target.value);
+    
+    if (!selectedRoom) return;
+
+    // Emit typing event
+    if (!typingTimeout.current) {
+      socketRef.current?.emit('typing', { roomId: selectedRoom._id });
+    }
+    
+    // Clear existing timeout
+    clearTimeout(typingTimeout.current);
+    
+    // Set new timeout
+    typingTimeout.current = setTimeout(() => {
+      socketRef.current?.emit('stopTyping', { roomId: selectedRoom._id });
+      typingTimeout.current = null;
+    }, 1000);
+  };
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -316,9 +340,12 @@ const ChatDashboard = () => {
                   </div>
                 </div>
               ))}
-              <div ref={messagesEndRef} />
-            </div>
+                <div ref={messagesEndRef} />
+               
+              </div>
+              
 
+   
             {/* Message Input Form */}
             <form onSubmit={handleSendMessage} className="mt-4 flex">
               <input

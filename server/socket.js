@@ -87,8 +87,26 @@ export default function (server) {
       });
     });
 
-    // Disconnect
+    socket.on("typing", ({ roomId, userId, username }) => {
+      socket.to(roomId).emit("userTyping", { userId, username, roomId });
+    });
+
+    socket.on("stopTyping", ({ roomId, userId }) => {
+      socket.to(roomId).emit("userStoppedTyping", { userId, roomId });
+    });
+
+    // When user disconnects, clear their typing status
     socket.on("disconnect", () => {
+      const rooms = [...socket.rooms];
+      rooms.forEach((roomId) => {
+        if (roomId !== socket.id) {
+          // Skip the default room
+          socket.to(roomId).emit("userStoppedTyping", {
+            userId: socket.user._id,
+            username: socket.user.username,
+          });
+        }
+      });
       console.log(`User disconnected: ${socket.user.username}`);
     });
   });
