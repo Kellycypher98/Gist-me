@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import http from "http";
 import cors from "cors";
+import path from "path";
 import authRoutes from "../server/routes/auth.js";
 import roomRoutes from "../server/routes/chatRoutes.js";
 import userRoutes from "../server/routes/users.js";
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/users", userRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // Basic route
 app.get("/", (req, res) => {

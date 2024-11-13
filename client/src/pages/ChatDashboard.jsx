@@ -4,7 +4,9 @@ import { io } from 'socket.io-client';
 import RoomManager from '../components/RoomManager';
 import LogoutBtn from '../components/LogoutBtn';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import TypingIndicator from '../components/TypingIndicator';
+import UserSettings from '../components/UserSettings';
 
 
 const ChatDashboard = () => {
@@ -17,6 +19,7 @@ const ChatDashboard = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const { token, user } = useAuth();
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
@@ -274,6 +277,13 @@ const handleMessageInputChange = (e) => {
           {showRoomManager ? 'Back to Chat' : 'Create Room'}
         </button>
 
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="text-gray-700 hover:text-blue-500 mb-4"
+        >
+          {showSettings ? 'Back to Dashboard' : 'Settings'}
+        </button>
+
         <ul>
           {rooms.map((room) => (
             <li
@@ -293,12 +303,16 @@ const handleMessageInputChange = (e) => {
             </li>
           ))}
         </ul>
+      
         <LogoutBtn />
       </div>
 
       {/* Main chat area */}
       <div className="flex-1 bg-white p-6">
-        {showRoomManager ? (
+        {showSettings ? (<UserSettings />) : (
+        
+       
+        showRoomManager ? (
           <RoomManager onRoomCreated={handleRoomCreated} token={token} />
         ) : selectedRoom ? (
           <div className="flex flex-col h-full">
@@ -367,7 +381,7 @@ const handleMessageInputChange = (e) => {
           </div>
         ) : (
           <p className="text-center text-gray-500">Select a room to start chatting</p>
-        )}
+        ))}
       </div>
 
       {/* Invite Modal */}
