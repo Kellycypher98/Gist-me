@@ -34,7 +34,7 @@ const RoomManager = ({ onRoomCreated }) => {
   };
 
   return (
-    <div className="bg-gray-100 p-4 rounded-md mb-6">
+    <div className="bg-gray-100 p-4 rounded-md mb-6 font-GeistMono">
       <h2 className="text-xl font-semibold mb-4">Create New Room</h2>
       
       <form onSubmit={handleCreateRoom} className="mb-4">

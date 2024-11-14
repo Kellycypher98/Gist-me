@@ -3,15 +3,21 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import RoomManager from '../components/RoomManager';
 import LogoutBtn from '../components/LogoutBtn';
-import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
-import TypingIndicator from '../components/TypingIndicator';
+import { useAuth } from '../context/AuthContext';;
 import UserSettings from '../components/UserSettings';
+import { RiChatNewLine } from "react-icons/ri";
+import { IoArrowBack } from "react-icons/io5";
+import { IoMdSettings } from "react-icons/io";
+import { IoSend } from "react-icons/io5";
+import { FaRegTrashAlt } from "react-icons/fa";
+import toast, { Toaster } from 'react-hot-toast';
+
 
 
 const ChatDashboard = () => {
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [userName, setUsername] = useState('');
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
   const [showRoomManager, setShowRoomManager] = useState(false);
@@ -20,6 +26,8 @@ const ChatDashboard = () => {
   const [inviteLink, setInviteLink] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { token, user } = useAuth();
   const socketRef = useRef();
   const messagesEndRef = useRef(null);
@@ -60,6 +68,9 @@ const ChatDashboard = () => {
     };
   }, [token, user]);
 
+
+
+
   // Handle real-time events
   useEffect(() => {
     if (!socketRef.current) return;
@@ -98,9 +109,10 @@ const ChatDashboard = () => {
     if (!user || !token) {
       console.log('No user or token available');
       return;
-    }
+    } 
     fetchRooms();
   }, [token, user]);
+
 
   const fetchRooms = async () => {
     try {
@@ -244,47 +256,59 @@ const ChatDashboard = () => {
     return message.sender._id === user._id;
   };
 
-const handleMessageInputChange = (e) => {
-    setMessageInput(e.target.value);
-    
-    if (!selectedRoom) return;
-
-    // Emit typing event
-    if (!typingTimeout.current) {
-      socketRef.current?.emit('typing', { roomId: selectedRoom._id });
-    }
-    
-    // Clear existing timeout
-    clearTimeout(typingTimeout.current);
-    
-    // Set new timeout
-    typingTimeout.current = setTimeout(() => {
-      socketRef.current?.emit('stopTyping', { roomId: selectedRoom._id });
-      typingTimeout.current = null;
-    }, 1000);
+    const handleDeleteClick = (room, e) => {
+    e.stopPropagation();
+    setRoomToDelete(room);
+    setShowDeleteDialog(true);
   };
 
+  // Check if user can delete room
+  const canDeleteRoom = (room) => {
+    return room.createdBy?._id === user?._id;
+  };
+
+  // Handle room deletion
+  const handleDeleteRoom = async (roomId) => {
+    if (!token) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/api/rooms/${roomId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setRooms(prevRooms => prevRooms.filter(room => room._id !== roomId));
+      
+      if (selectedRoom?._id === roomId) {
+        setSelectedRoom(null);
+        setMessages([]);
+      }
+
+      toast.success('Room deleted successfully');
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete room');
+    }
+  };
+
+  // Handle delete confirmation
+  const confirmDelete = async () => {
+    if (roomToDelete) {
+      await handleDeleteRoom(roomToDelete._id);
+    }
+    setShowDeleteDialog(false);
+    setRoomToDelete(null);
+  };
+
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen font-GeistMono">
+      <Toaster/>
       {/* Sidebar */}
       <div className="w-1/4 bg-gray-800 text-white p-4">
-        <h2 className="text-xl font-bold mb-4">Rooms</h2>
-        
-        <button
-          onClick={() => setShowRoomManager(!showRoomManager)}
-          className="bg-blue-500 text-white p-2 rounded-md mb-4 w-full hover:bg-blue-600"
-        >
-          {showRoomManager ? 'Back to Chat' : 'Create Room'}
-        </button>
-
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="text-gray-700 hover:text-blue-500 mb-4"
-        >
-          {showSettings ? 'Back to Dashboard' : 'Settings'}
-        </button>
-
+        <h1 className="text-xl font-bold mb-4">Gist.me </h1>
+     
         <ul>
+          <h2 className="text-lg font-bold mb-4">ChatRooms</h2>
           {rooms.map((room) => (
             <li
               key={room._id}
@@ -296,22 +320,87 @@ const handleMessageInputChange = (e) => {
                 setShowRoomManager(false);
               }}
             >
-              <span className="font-bold">{room.name}</span>
-              <p className="text-sm text-gray-400">
-                Created by: {room.createdBy?.username || 'Unknown'}
-              </p>
+               <div className="flex justify-between items-center">
+              <div className="flex-1">
+                <span className="font-bold block">{room.name}</span>
+                <p className="text-sm text-gray-400">
+                  Created by: {room.createdBy?.username || 'Unknown'}
+                </p>
+              </div>
+              {canDeleteRoom(room) && (
+                <button
+                  onClick={(e) => handleDeleteClick(room, e)}
+                  className="p-1 hover:bg-red-500 rounded-full transition-colors duration-200"
+                  title="Delete room"
+                >
+                  <FaRegTrashAlt />
+                </button>
+              )}
+            </div>
             </li>
           ))}
         </ul>
       
-        <LogoutBtn />
+             {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h3 className="text-xl text-black font-semibold mb-4">Delete Room</h3>
+            <p className="mb-4 text-black">Are you sure you want to delete "{roomToDelete?.name}"? This action cannot be undone.</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setRoomToDelete(null);
+                }}
+                className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+        <button
+          onClick={() => setShowRoomManager(!showRoomManager)}
+          className=" text-white p-2  mb-4 w-fit hover:bg-blue-600 flex items-center gap-3"
+        >
+          {showRoomManager ? (
+            <>
+             <IoArrowBack /> Back to Chat  
+            </>
+          ) : (
+            <>
+            <RiChatNewLine />  Create new chat 
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="text-white p-2  mb-4 w-fit hover:bg-blue-600 flex items-center gap-3"
+        >
+          {showSettings ? (
+          <>
+             <IoArrowBack /> Back to Dashboard
+          </>) : (
+          <>
+           <IoMdSettings /> Settings
+          </> )}
+        </button>
+      
+            <LogoutBtn />
       </div>
 
       {/* Main chat area */}
       <div className="flex-1 bg-white p-6">
         {showSettings ? (<UserSettings />) : (
-        
-       
         showRoomManager ? (
           <RoomManager onRoomCreated={handleRoomCreated} token={token} />
         ) : selectedRoom ? (
@@ -375,12 +464,12 @@ const handleMessageInputChange = (e) => {
                 className="ml-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
                 disabled={!messageInput.trim() || !isConnected}
               >
-                Send
+                <IoSend />
               </button>
             </form>
           </div>
         ) : (
-          <p className="text-center text-gray-500">Select a room to start chatting</p>
+          <p className="text-center text-gray-500">Select a ChatRoom to start chatting</p>
         ))}
       </div>
 

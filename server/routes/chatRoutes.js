@@ -2,6 +2,7 @@ import express from "express";
 import Room from "../models/Rooms.js";
 import Message from "../models/Messages.js";
 import crypto from "crypto";
+import mongoose from "mongoose";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -174,6 +175,50 @@ router.post("/:roomId/messages", async (req, res) => {
   } catch (error) {
     console.error("Error creating message:", error);
     res.status(500).json({ message: "Failed to create message" });
+  }
+});
+
+router.delete("/:roomId", protect, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const room = await Room.findById(req.params.roomId).populate("createdBy");
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    // Get the user ID from auth middleware
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    // Compare user ID with room creator ID
+    const roomCreatorId = room.createdBy?._id || room.createdBy;
+
+    if (roomCreatorId.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this room" });
+    }
+
+    // Delete all messages in the room
+    await Message.deleteMany({ roomId: req.params.roomId }, { session });
+
+    // Delete the room
+    await Room.findByIdAndDelete(req.params.roomId, { session });
+
+    await session.commitTransaction();
+    res.json({ message: "Room deleted successfully" });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error deleting room:", error);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    session.endSession();
   }
 });
 

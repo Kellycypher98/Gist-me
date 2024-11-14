@@ -2,7 +2,12 @@
 export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        GeistMono: ["Geist Mono", "monospace"],
+        // Add more custom font families as needed
+      },
+    },
   },
   plugins: [],
 };
