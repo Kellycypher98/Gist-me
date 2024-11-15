@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { TailSpin } from 'react-loader-spinner';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
+import { VITE_PUBLIC_API_URL } from '../config';
 
 const Signup = ({ setToken }) => {
   const [username, setUsername] = useState('');
@@ -22,7 +23,7 @@ const Signup = ({ setToken }) => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/signup', { username, password, email });
+      const response = await axios.post(`${process.env.VITE_PUBLIC_API_URL}/api/auth/signup`, { username, password, email });
       setToken(response.data.token);
       toast.success('Signup Successful!');
       navigate('/'); 

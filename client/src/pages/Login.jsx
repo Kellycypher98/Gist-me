@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +30,7 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await axios.post(`${process.env.VITE_PUBLIC_API_URL}/api/auth/login`, {
         username,
         password,
       });

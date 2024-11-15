@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+
 const UserSettings = ({ userId }) => {
   const { user, token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +64,7 @@ const UserSettings = ({ userId }) => {
         formData.append('profilePic', profilePic);
         
         const picResponse = await fetch(
-          `http://localhost:5000/api/users/${userId}/profile-pic`,
+          `${process.env.VITE_PUBLIC_API_URL}/api/users/${userId}/profile-pic`,
           {
             method: 'PUT',
             headers: {
@@ -81,7 +82,7 @@ const UserSettings = ({ userId }) => {
 
       // Update username and email
       const response = await fetch(
-        `http://localhost:5000/api/users/${userId}/profile`,
+        `${process.env.VITE_PUBLIC_API_URL}/api/users/${userId}/profile`,
         {
           method: 'PUT',
           headers: {
@@ -121,7 +122,7 @@ const UserSettings = ({ userId }) => {
       }
       
       const response = await fetch(
-        `http://localhost:5000/api/users/${userId}/password`,
+        `${process.env.VITE_PUBLIC_API_URL}/api/users/${userId}/password`,
         {
           method: 'PUT',
           headers: {

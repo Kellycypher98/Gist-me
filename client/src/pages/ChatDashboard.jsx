@@ -38,7 +38,7 @@ const ChatDashboard = () => {
   useEffect(() => {
     if (!token || !user) return;
 
-    socketRef.current = io('http://localhost:5000', {
+    socketRef.current = io(process.env.VITE_PUBLIC_API_URL, {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,
@@ -116,7 +116,7 @@ const ChatDashboard = () => {
 
   const fetchRooms = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/rooms', {
+      const response = await axios.get(`${process.env.VITE_PUBLIC_API_URL}/api/rooms`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -136,7 +136,7 @@ const ChatDashboard = () => {
     const fetchMessages = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/rooms/${selectedRoom._id}/messages`,
+          `${process.env.VITE_PUBLIC_API_URL}/api/rooms/${selectedRoom._id}/messages`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -148,7 +148,7 @@ const ChatDashboard = () => {
 
         const userResponses = await Promise.all(
           Array.from(senderIds).map(senderId =>
-            axios.get(`http://localhost:5000/api/users/${senderId}`, {
+            axios.get(`${process.env.VITE_PUBLIC_API_URL}/api/users/${senderId}`, {
               headers: { Authorization: `Bearer ${token}` }
             })
             .then(response => ({
@@ -232,7 +232,7 @@ const ChatDashboard = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/rooms/${selectedRoom._id}/invite`,
+        `${process.env.VITE_PUBLIC_API_URL}/api/rooms/${selectedRoom._id}/invite`,
         { emails: [inviteEmail] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -272,7 +272,7 @@ const ChatDashboard = () => {
     if (!token) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/rooms/${roomId}`, {
+      await axios.delete(`${process.env.VITE_PUBLIC_API_URL}/api/rooms/${roomId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

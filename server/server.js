@@ -17,7 +17,7 @@ const io = socketInit(server);
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://gist-me-rose.vercel.app/",
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
