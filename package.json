@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "concurrently \"npm start --prefix client\" \"npm run dev --prefix server\"",
     "client": "npm start --prefix client",
-    "server": "npm run dev --prefix server"
+    "server": "npm run dev --prefix server",
+    "build": "echo 'No build step needed'"
   },
   "keywords": [],
   "author": "",
