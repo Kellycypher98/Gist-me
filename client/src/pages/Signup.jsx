@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { TailSpin } from 'react-loader-spinner';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
-import { VITE_PUBLIC_API_URL } from '../config';
+
 
 const Signup = ({ setToken }) => {
   const [username, setUsername] = useState('');
