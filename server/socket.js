@@ -5,6 +5,10 @@ import User from "./models/User.js";
 import Message from "./models/Messages.js";
 
 export default function (server) {
+  const NODE_ENV = process.env.NODE_ENV || "development";
+  const FRONTEND_URL =
+    process.env.FRONTEND_URL || "https://gist-me-rose.vercel.app";
+
   const io = new Server(server, {
     cors: {
       origin:
