@@ -36,8 +36,8 @@ requiredEnvVars.forEach((envVar) => {
 const corsOptions = {
   origin:
     NODE_ENV === "production"
-      ? [FRONTEND_URL, /\.elasticbeanstalk\.com$/] // Allow both Vercel and EB domains
-      : "http://localhost:3000",
+      ? [FRONTEND_URL, /\.elasticbeanstalk\.com$/, /\.amazonaws\.com$/]
+      : "http://localhost:5173",
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -51,7 +51,13 @@ app.set("trust proxy", true);
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(helmet()); // Add security headers
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false, // Disable COEP as it can cause issues with certain resources
+    crossOriginOpenerPolicy: false, // Disable COOP initially to debug the issue
+    crossOriginResourcePolicy: false,
+  })
+); // Add security headers
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -61,10 +67,17 @@ app.use(
     trustProxy: true,
   })
 );
-app.use((reg, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-  next();
+
+app.use((req, res, next) => {
+  if (
+    NODE_ENV === "production" &&
+    !req.secure &&
+    req.get("x-forwarded-proto") !== "https"
+  ) {
+    res.redirect(`https://${req.hostname}${req.url}`);
+  } else {
+    next();
+  }
 });
 
 // API Routes

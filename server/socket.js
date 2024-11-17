@@ -8,10 +8,14 @@ export default function (server) {
   const io = new Server(server, {
     cors: {
       origin:
-        "http://gist-me-chat-app-env.eba-g3gixzea.us-east-1.elasticbeanstalk.com",
+        NODE_ENV === "production"
+          ? [FRONTEND_URL, /\.elasticbeanstalk\.com$/, /\.amazonaws\.com$/]
+          : "http://localhost:5173",
       methods: ["GET", "POST"],
       credentials: true,
     },
+    transports: ["websocket", "polling"],
+    allowEIO3: true,
   });
 
   // Middleware for authentication
