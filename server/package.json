@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "build": "echo 'No build step needed'",
+   "start": "node server.js",
+    "build": "npm install"
+  },
+  "engines": {
+    "node": "20"
   },
   "keywords": [],
   "author": "",

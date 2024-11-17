@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - npm install
+      - cd client && npm install && cd ..
+
+  build:
+    commands:
+      - cd client && npm run build && cd ..
+
+  post_build:
+    commands:
+      - echo Build completed
+
+artifacts:
+  files:
+    - "**/*"
+  base-directory: "."
