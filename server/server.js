@@ -77,9 +77,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Serve static files from Vite build in production
 if (NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/dist")));
+  app.use(express.static(path.join(__dirname, "./client/dist")));
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
+    res.sendFile(path.join(__dirname, "./client/dist", "index.html"));
   });
 } else {
   app.get("/", (req, res) => {
