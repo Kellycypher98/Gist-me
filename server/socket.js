@@ -7,7 +7,8 @@ import Message from "./models/Messages.js";
 export default function (server) {
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin:
+        "http://gist-me-chat-app-env.eba-g3gixzea.us-east-1.elasticbeanstalk.com",
       methods: ["GET", "POST"],
       credentials: true,
     },
