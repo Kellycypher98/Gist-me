@@ -111,4 +111,6 @@ export default function (server) {
       console.log(`User disconnected: ${socket.user.username}`);
     });
   });
+
+  return io;
 }
