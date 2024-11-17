@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import http from "http";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 import authRoutes from "./server/routes/auth.js";
@@ -12,14 +14,23 @@ import socketInit from "./server/socket.js";
 
 dotenv.config();
 
-const app = express();
-const server = http.createServer(app);
-const io = socketInit(server);
+// Fix for ES modules __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Environment variables
 const NODE_ENV = process.env.NODE_ENV || "development";
 const FRONTEND_URL =
   process.env.FRONTEND_URL || "https://gist-me-rose.vercel.app";
+
+// Validate critical environment variables
+const requiredEnvVars = ["MONGO_URI", "FRONTEND_URL"];
+requiredEnvVars.forEach((envVar) => {
+  if (!process.env[envVar]) {
+    console.error(`Environment variable ${envVar} is missing.`);
+    process.exit(1);
+  }
+});
 
 // CORS configuration based on environment
 const corsOptions = {
@@ -32,24 +43,39 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 };
 
+const app = express();
+const server = http.createServer(app);
+const io = socketInit(server);
+
+// Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(helmet()); // Add security headers
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per window
+  })
+);
 
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/users", userRoutes);
 
-// Fix for ES modules __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Static file serving
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Serve static files from React build in production
+// Serve static files from Vite build in production
 if (NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "client/build")));
+  app.use(express.static(path.join(__dirname, "client/dist")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "client/dist", "index.html"));
+  });
+} else {
+  app.get("/", (req, res) => {
+    res.send("Gist.me Backend is running in development mode");
+  });
 }
 
 // Health check endpoint
@@ -70,18 +96,7 @@ app.get("/api/status", (req, res) => {
   });
 });
 
-// Handle React routing in production
-if (NODE_ENV === "production") {
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "client/build", "index.html"));
-  });
-} else {
-  app.get("/", (req, res) => {
-    res.send("Gist.me Backend is running in development mode");
-  });
-}
-
-// MongoDB connection with retry logic and better error handling
+// MongoDB connection with retry logic
 const connectDB = async (retryCount = 0, maxRetries = 5) => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
@@ -95,7 +110,7 @@ const connectDB = async (retryCount = 0, maxRetries = 5) => {
       err
     );
     if (retryCount < maxRetries) {
-      console.log(`Retrying in 5 seconds...`);
+      console.log("Retrying in 5 seconds...");
       setTimeout(() => connectDB(retryCount + 1, maxRetries), 5000);
     } else {
       console.error(
@@ -106,9 +121,26 @@ const connectDB = async (retryCount = 0, maxRetries = 5) => {
   }
 };
 
+// MongoDB connection logging
+mongoose.connection.on("connected", () => {
+  console.log("MongoDB connected successfully.");
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.warn("MongoDB disconnected.");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB connection error:", err);
+});
+
 // Socket.io error handling
 io.on("error", (error) => {
-  console.error("Socket.io error:", error);
+  console.error("Socket.io error:", error.message);
+});
+
+io.on("connect_error", (error) => {
+  console.warn("Socket.io connection error:", error.message);
 });
 
 // Initialize database connection
@@ -124,9 +156,14 @@ server.listen(PORT, () => {
 const gracefulShutdown = async () => {
   console.log("Received shutdown signal. Starting graceful shutdown...");
 
+  // Close WebSocket connections
+  io.close(() => {
+    console.log("Socket.io server closed.");
+  });
+
   // Close server first to stop accepting new connections
   server.close(() => {
-    console.log("Server closed. No longer accepting connections.");
+    console.log("HTTP server closed. No longer accepting connections.");
 
     // Close database connection
     mongoose.connection.close(false, () => {

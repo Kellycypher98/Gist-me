@@ -1,22 +1,17 @@
 version: 0.2
-
 phases:
   install:
-    runtime-versions:
-      nodejs: 18
     commands:
-      - npm install
+      - echo "Installing dependencies..."
       - cd client && npm install && cd ..
-
+      - npm install
   build:
     commands:
+      - echo "Building React app..."
       - cd client && npm run build && cd ..
-
-  post_build:
-    commands:
-      - echo Build completed
-
+      - mv client/dist server/dist
 artifacts:
   files:
-    - "**/*"
-  base-directory: "."
+    - server/**
+    - Procfile
+    - .ebextensions/**
