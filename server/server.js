@@ -57,6 +57,11 @@ app.use(
     max: 100, // Limit each IP to 100 requests per window
   })
 );
+app.use((reg, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  next();
+});
 
 // API Routes
 app.use("/api/auth", authRoutes);
