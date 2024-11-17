@@ -7,10 +7,10 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
-import authRoutes from "./server/routes/auth.js";
-import roomRoutes from "./server/routes/chatRoutes.js";
-import userRoutes from "./server/routes/users.js";
-import socketInit from "./server/socket.js";
+import authRoutes from "./routes/auth.js";
+import roomRoutes from ".routes/chatRoutes.js";
+import userRoutes from ".routes/users.js";
+import socketInit from "./socket.js";
 
 dotenv.config();
 
