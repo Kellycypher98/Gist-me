@@ -46,6 +46,7 @@ const corsOptions = {
 const app = express();
 const server = http.createServer(app);
 const io = socketInit(server);
+app.set("trust proxy", true);
 
 // Middleware
 app.use(cors(corsOptions));
@@ -55,6 +56,9 @@ app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per window
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    trustProxy: true,
   })
 );
 app.use((reg, res, next) => {
@@ -73,9 +77,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Serve static files from Vite build in production
 if (NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "client/dist")));
+  app.use(express.static(path.join(__dirname, "../client/dist")));
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "client/dist", "index.html"));
+    res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
   });
 } else {
   app.get("/", (req, res) => {
