@@ -36,17 +36,26 @@ requiredEnvVars.forEach((envVar) => {
 const corsOptions = {
   origin:
     NODE_ENV === "production"
-      ? [FRONTEND_URL, /\.elasticbeanstalk\.com$/, /\.amazonaws\.com$/]
+      ? [FRONTEND_URL, /\.elasticbeanstalk\.com$/, /\.amazonaws\.com$/].filter(
+          Boolean
+        ) // Filter out any undefined values
       : "http://localhost:5173",
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  maxAge: 86400, // Cache preflight requests for 24 hours
 };
 
 const app = express();
 const server = http.createServer(app);
 const io = socketInit(server);
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 
 // Middleware
 app.use(cors(corsOptions));
@@ -56,8 +65,18 @@ app.use(
     crossOriginEmbedderPolicy: false, // Disable COEP as it can cause issues with certain resources
     crossOriginOpenerPolicy: false, // Disable COOP initially to debug the issue
     crossOriginResourcePolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: ["'self'", FRONTEND_URL, "wss:", "ws:"],
+        // Add other directives as needed
+      },
+    },
   })
-); // Add security headers
+);
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" })); // Add security headers
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

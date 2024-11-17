@@ -18,6 +18,15 @@ export default function (server) {
       methods: ["GET", "POST"],
       credentials: true,
     },
+    connectionStateRecovery: {
+      // Enables client recovery of missed messages
+      maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+    },
+    // Add rate limiting for socket connections
+    allowRequest: (req, callback) => {
+      // Implement your socket connection rate limiting here
+      callback(null, true);
+    },
     transports: ["websocket", "polling"],
     allowEIO3: true,
   });
