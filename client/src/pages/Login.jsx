@@ -30,7 +30,8 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${process.env.VITE_PUBLIC_API_URL}/api/auth/login`, {
+      const API_URL = process.env.VITE_PUBLIC_API_URL || '';
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         username,
         password,
       });

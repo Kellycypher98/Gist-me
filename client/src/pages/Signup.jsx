@@ -23,7 +23,8 @@ const Signup = ({ setToken }) => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${process.env.VITE_PUBLIC_API_URL}/api/auth/signup`, { username, password, email });
+      const API_URL = process.env.VITE_PUBLIC_API_URL || '';
+      const response = await axios.post(`${API_URL}/api/auth/signup`, { username, password, email });
       setToken(response.data.token);
       toast.success('Signup Successful!');
       navigate('/'); 

@@ -62,9 +62,10 @@ const UserSettings = ({ userId }) => {
       if (profilePic) {
         const formData = new FormData();
         formData.append('profilePic', profilePic);
+        const API_URL = process.env.VITE_PUBLIC_API_URL || '';
         
         const picResponse = await fetch(
-          `${process.env.VITE_PUBLIC_API_URL}/api/users/${userId}/profile-pic`,
+          `${API_URL}/api/users/${userId}/profile-pic`,
           {
             method: 'PUT',
             headers: {
@@ -82,7 +83,7 @@ const UserSettings = ({ userId }) => {
 
       // Update username and email
       const response = await fetch(
-        `${process.env.VITE_PUBLIC_API_URL}/api/users/${userId}/profile`,
+        `${API_URL}/api/users/${userId}/profile`,
         {
           method: 'PUT',
           headers: {
@@ -122,7 +123,7 @@ const UserSettings = ({ userId }) => {
       }
       
       const response = await fetch(
-        `${process.env.VITE_PUBLIC_API_URL}/api/users/${userId}/password`,
+        `${API_URL}/api/users/${userId}/password`,
         {
           method: 'PUT',
           headers: {

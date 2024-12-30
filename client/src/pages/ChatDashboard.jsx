@@ -116,7 +116,8 @@ const ChatDashboard = () => {
 
   const fetchRooms = async () => {
     try {
-      const response = await axios.get(`${process.env.VITE_PUBLIC_API_URL}/api/rooms`, {
+      const API_URL = process.env.VITE_PUBLIC_API_URL || '';
+      const response = await axios.get(`${API_URL}/api/rooms`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -134,9 +135,10 @@ const ChatDashboard = () => {
     if (!selectedRoom || !token) return;
 
     const fetchMessages = async () => {
+      const API_URL = process.env.VITE_PUBLIC_API_URL || '';
       try {
         const response = await axios.get(
-          `${process.env.VITE_PUBLIC_API_URL}/api/rooms/${selectedRoom._id}/messages`,
+          `${API_URL}/api/rooms/${selectedRoom._id}/messages`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -148,7 +150,7 @@ const ChatDashboard = () => {
 
         const userResponses = await Promise.all(
           Array.from(senderIds).map(senderId =>
-            axios.get(`${process.env.VITE_PUBLIC_API_URL}/api/users/${senderId}`, {
+            axios.get(`${API_URL}/api/users/${senderId}`, {
               headers: { Authorization: `Bearer ${token}` }
             })
             .then(response => ({
@@ -229,10 +231,11 @@ const ChatDashboard = () => {
 
   const handleGenerateInvite = async () => {
     if (!selectedRoom || !token || !inviteEmail) return;
+    const API_URL = process.env.VITE_PUBLIC_API_URL || '';
 
     try {
       const response = await axios.post(
-        `${process.env.VITE_PUBLIC_API_URL}/api/rooms/${selectedRoom._id}/invite`,
+        `${API_URL}/api/rooms/${selectedRoom._id}/invite`,
         { emails: [inviteEmail] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -270,9 +273,10 @@ const ChatDashboard = () => {
   // Handle room deletion
   const handleDeleteRoom = async (roomId) => {
     if (!token) return;
+    const API_URL = process.env.VITE_PUBLIC_API_URL || '';
 
     try {
-      await axios.delete(`${process.env.VITE_PUBLIC_API_URL}/api/rooms/${roomId}`, {
+      await axios.delete(`${API_URL}/api/rooms/${roomId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

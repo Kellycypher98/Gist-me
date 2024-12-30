@@ -12,8 +12,9 @@ const RoomManager = ({ onRoomCreated }) => {
     if (!roomName.trim()) return;
 
     try {
+      const API_URL = process.env.VITE_PUBLIC_API_URL || '';
       const response = await axios.post(
-        `${process.env.VITE_PUBLIC_API_URL}/api/rooms`,
+        `${API_URL}/api/rooms`,
         { name: roomName },
         {
           headers: {
