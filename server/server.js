@@ -33,7 +33,11 @@ requiredEnvVars.forEach((envVar) => {
 
 // CORS configuration for local development
 const corsOptions = {
-  origin: NODE_ENV === "production" ? FRONTEND_URL : "*",
+  origin:
+    NODE_ENV === "production"
+      ? FRONTEND_URL
+      : "https://gist-me-rose.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 };
 
