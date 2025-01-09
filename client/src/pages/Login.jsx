@@ -30,7 +30,7 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const API_URL = process.env.VITE_PUBLIC_API_URL || '';
+      const API_URL = import.meta.env.VITE_PUBLIC_API_URL;
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         username,
         password,

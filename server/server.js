@@ -20,8 +20,7 @@ const __dirname = path.dirname(__filename);
 
 // Environment variables
 const NODE_ENV = process.env.NODE_ENV || "development";
-const FRONTEND_URL =
-  process.env.FRONTEND_URL || "https://gist-me-rose.vercel.app";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 // Validate critical environment variables
 const requiredEnvVars = ["MONGO_URI", "FRONTEND_URL"];
@@ -32,24 +31,10 @@ requiredEnvVars.forEach((envVar) => {
   }
 });
 
-// CORS configuration based on environment
+// CORS configuration for local development
 const corsOptions = {
-  origin:
-    NODE_ENV === "production"
-      ? [FRONTEND_URL, /\.elasticbeanstalk\.com$/, /\.amazonaws\.com$/].filter(
-          Boolean
-        ) // Filter out any undefined values
-      : "http://localhost:5173",
+  origin: FRONTEND_URL,
   credentials: true,
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  maxAge: 86400, // Cache preflight requests for 24 hours
 };
 
 const app = express();
@@ -62,42 +47,29 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(
   helmet({
-    crossOriginEmbedderPolicy: false, // Disable COEP as it can cause issues with certain resources
-    crossOriginOpenerPolicy: false, // Disable COOP initially to debug the issue
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
     crossOriginResourcePolicy: false,
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
         connectSrc: ["'self'", FRONTEND_URL, "wss:", "ws:"],
-        // Add other directives as needed
       },
     },
   })
 );
 
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" })); // Add security headers
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per window
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
     trustProxy: true,
   })
 );
-
-app.use((req, res, next) => {
-  if (
-    NODE_ENV === "production" &&
-    !req.secure &&
-    req.get("x-forwarded-proto") !== "https"
-  ) {
-    res.redirect(`https://${req.hostname}${req.url}`);
-  } else {
-    next();
-  }
-});
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -110,17 +82,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Serve static files from Vite build in production
 if (NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/dist")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../client/dist/index.html"));
-  });
+  app.get("*", (_, res) =>
+    res.sendFile(path.resolve(__dirname, "../client/dist", "index.html"))
+  );
 } else {
-  app.get("/", (req, res) => {
-    res.send("Gist.me Backend is running in development mode");
-  });
+  app.get("/", (_, res) =>
+    res.send("Gist.me Backend is running in development mode")
+  );
 }
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/health", (_, res) => {
   res.status(200).json({
     status: "healthy",
     environment: NODE_ENV,
@@ -129,7 +101,7 @@ app.get("/health", (req, res) => {
 });
 
 // API status endpoint
-app.get("/api/status", (req, res) => {
+app.get("/api/status", (_, res) => {
   res.json({
     status: "operational",
     version: process.env.npm_package_version || "1.0.0",
@@ -188,7 +160,7 @@ io.on("connect_error", (error) => {
 connectDB();
 
 // Start server
-const PORT = process.env.PORT || 8081;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} in ${NODE_ENV} mode`);
 });
@@ -203,14 +175,18 @@ const gracefulShutdown = async () => {
   });
 
   // Close server first to stop accepting new connections
-  server.close(() => {
+  server.close(async () => {
     console.log("HTTP server closed. No longer accepting connections.");
 
-    // Close database connection
-    mongoose.connection.close(false, () => {
+    try {
+      // Close MongoDB connection (no callback, using await)
+      await mongoose.connection.close();
       console.log("MongoDB connection closed.");
       process.exit(0);
-    });
+    } catch (error) {
+      console.error("Error closing MongoDB connection:", error);
+      process.exit(1);
+    }
   });
 
   // Force close after 30 seconds
