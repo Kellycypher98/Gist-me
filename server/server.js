@@ -33,7 +33,7 @@ requiredEnvVars.forEach((envVar) => {
 
 // CORS configuration for local development
 const corsOptions = {
-  origin: FRONTEND_URL,
+  origin: NODE_ENV === "production" ? FRONTEND_URL : "*",
   credentials: true,
 };
 
